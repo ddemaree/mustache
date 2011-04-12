@@ -1,14 +1,19 @@
 $LOAD_PATH.unshift File.dirname(__FILE__)
+$LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
+
 require 'helper'
+require 'mustache'
+# require '../lib/mustache/parser'
 
 class ParserTest < Test::Unit::TestCase
   def test_parser
     lexer = Mustache::Parser.new
     tokens = lexer.compile(<<-EOF)
 <h1>{{header}}</h1>
+{{tag_with_args arg1:"hi there"}}
 {{#items}}
 {{#first}}
-  <li><strong>{{name}}</strong></li>
+  <li><strong>{{name format:"short"}}</strong></li>
 {{/first}}
 {{#link}}
   <li><a href="{{url}}">{{name}}</a></li>
@@ -24,6 +29,9 @@ EOF
       [:static, "<h1>"],
       [:mustache, :etag, [:mustache, :fetch, ["header"]]],
       [:static, "</h1>\n"],
+      [:mustache, :etag,
+        [:mustache, :fetch, ["tag_with_args", {:arg1=>"hi there"}]]],
+      [:static, "\n"],
       [:mustache,
         :section,
         [:mustache, :fetch, ["items"]],
@@ -33,9 +41,9 @@ EOF
             [:mustache, :fetch, ["first"]],
             [:multi,
               [:static, "  <li><strong>"],
-              [:mustache, :etag, [:mustache, :fetch, ["name"]]],
+              [:mustache, :etag, [:mustache, :fetch, ["name", {:format=>"short"}]]],
               [:static, "</strong></li>\n"]],
-            %Q'  <li><strong>{{name}}</strong></li>\n',
+            %Q'  <li><strong>{{name format:"short"}}</strong></li>\n',
             %w[{{ }}]],
           [:mustache,
             :section,
@@ -48,7 +56,7 @@ EOF
               [:static, "</a></li>\n"]],
             %Q'  <li><a href="{{url}}">{{name}}</a></li>\n',
             %w[{{ }}]]],
-        %Q'{{#first}}\n  <li><strong>{{name}}</strong></li>\n{{/first}}\n{{#link}}\n  <li><a href="{{url}}">{{name}}</a></li>\n{{/link}}\n',
+        %Q'{{#first}}\n  <li><strong>{{name format:"short"}}</strong></li>\n{{/first}}\n{{#link}}\n  <li><a href="{{url}}">{{name}}</a></li>\n{{/link}}\n',
         %w[{{ }}]],
       [:static, "\n"],
       [:mustache,

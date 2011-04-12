@@ -50,11 +50,15 @@ EOF
     SKIP_WHITESPACE = [ '#', '^', '/', '<', '>', '=', '!' ]
 
     # The content allowed in a tag name.
-    ALLOWED_CONTENT = /(\w|[?!\/.-])*/
+    # OLD_ALLOWED_CONTENT = /(\w|[?!\/.-])*/
+    ALLOWED_CONTENT = /(\w|[?!\/.-])*(?: (\w|[?!\/.-])+\:"[^"]+")*/
 
     # These types of tags allow any content,
     # the rest only allow ALLOWED_CONTENT.
-    ANY_CONTENT = [ '!', '=' ]
+    ANY_CONTENT = [ '!', '=', '%' ]
+
+    # Regexp for tags containing arguments
+    ARGUMENT_FORMAT = /(?: (\w|[?!\/.-])+\:"[^"]+")+/
 
     attr_reader :scanner, :result
     attr_writer :otag, :ctag
@@ -124,7 +128,7 @@ EOF
       # Since {{= rewrites ctag, we store the ctag which should be used
       # when parsing this specific tag.
       current_ctag = self.ctag
-      type = @scanner.scan(/#|\^|\/|=|!|<|>|&|\{/)
+      type = @scanner.scan(/#|\^|\/|=|!|\%|<|>|&|\{/)
       @scanner.skip(/\s*/)
 
       # ANY_CONTENT tags allow any character inside of them, while
@@ -139,7 +143,26 @@ EOF
       # We found {{ but we can't figure out what's going on inside.
       error "Illegal content in tag" if content.empty?
 
-      fetch = [:mustache, :fetch, content.split('.')]
+      # Detect a tag with arguments
+      # error content.to_s if content =~ /tag_with_args/
+      tag_arguments = {}
+
+      if content =~ ARGUMENT_FORMAT
+        # Strip out and store each named argument
+        content.gsub!(ARGUMENT_FORMAT) { |t|
+          key, value = t.strip.split(":") # Strip leading spaces and separate keys from values
+          value.gsub!(/\"/,"") # Strip quoted values
+          tag_arguments[key.to_sym] = value; # Store in the arguments hash
+          "" # Return an empty string, to remove this argument from the tag content
+        }
+      end
+
+      # The handler is an array of chained method names and (if present) the arguments hash
+      # E.g. {{post.date format:"%a %b %e"}} => ["post", "date", {:format => "%a %b %e"}]
+      handler = content.split('.')
+      handler << tag_arguments unless tag_arguments.empty?
+
+      fetch = [:mustache, :fetch, handler]
       prev = @result
 
       # Based on the sigil, do what needs to be done.
