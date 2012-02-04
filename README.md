@@ -107,7 +107,7 @@ Escaping
 
 Mustache does escape all values when using the standard double
 Mustache syntax. Characters which will be escaped: `& \ " < >`. To
-disable escaping, simply use tripple mustaches like
+disable escaping, simply use triple mustaches like
 `{{{unescaped_variable}}}`.
 
 Example: Using `{{variable}}` inside a template for `5 > 2` will
@@ -326,12 +326,7 @@ See <http://gist.github.com/323622> for installation instructions.
 Emacs
 -----
 
-mustache-mode.el is included under the contrib/ directory for any
-Emacs users. Based on Google's tpl-mode for ctemplates, it adds
-support for Mustache's more lenient tag values and includes a few
-commands for your editing pleasure.
-
-See <http://gist.github.com/323619> for installation instructions.
+mustache-mode.el is available at https://github.com/mustache/emacs
 
 
 TextMate
@@ -400,7 +395,6 @@ Meta
 * Home: <http://mustache.github.com>
 * Bugs: <http://github.com/defunkt/mustache/issues>
 * List: <mustache@librelist.com>
-* Test: <http://runcoderun.com/defunkt/mustache>
 * Gems: <http://rubygems.org/gems/mustache>
 
 You can also find us in `#{` on irc.freenode.net.

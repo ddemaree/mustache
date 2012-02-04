@@ -40,7 +40,7 @@ require 'mustache/settings'
 #
 # * template_file
 #
-# You can tell Mustache exactly which template to us with this
+# You can tell Mustache exactly which template to use with this
 # setting. It can be a relative or absolute path.
 #
 # * template
@@ -234,8 +234,8 @@ class Mustache
   # Returns the constant if found
   # Returns nil if nothing is found
   def self.const_get!(name)
-    name.split('::').inject(Object) do |klass, name|
-      klass.const_get(name)
+    name.split('::').inject(Object) do |klass, cname|
+      klass.const_get(cname)
     end
   rescue NameError
     nil

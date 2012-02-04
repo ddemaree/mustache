@@ -39,6 +39,18 @@ class Mustache
   # You can indeed use layouts with this library. Where you'd normally
   # <%= yield %> you instead {{{yield}}} - the body of the subview is
   # set to the `yield` variable and made available to you.
+  #
+  # If you don't want the Sinatra extension to look up your view class,
+  # maybe because you've already loaded it or you're pulling it in from
+  # a gem, you can hand the `mustache` helper a Mustache subclass directly:
+  #
+  #   # Assuming `class Omnigollum::Login < Mustache`
+  #   get '/login' do
+  #     @title = "Log In"
+  #     require 'lib/omnigollum/views/login'
+  #     mustache Omnigollum::Login
+  #   end
+  #
   module Sinatra
     module Helpers
       # Call this in your Sinatra routes.
@@ -72,10 +84,17 @@ class Mustache
           end
         end
 
-        # Find and cache the view class we want. This ensures the
-        # compiled template is cached, too - no looking up and
-        # compiling templates on each page load.
-        klass = mustache_class(template, options)
+        # If instead of a symbol they gave us a Mustache class,
+        # use that for rendering.
+        klass = template if template.is_a?(Class) && template < Mustache
+
+        # Find and cache the view class we want if we don't have
+        # one yet. This ensures the compiled template is cached,
+        # too - no looking up and compiling templates on each page
+        # load.
+        if klass.nil?
+          klass = mustache_class(template, options)
+        end
 
         # Does the view subclass the layout? If so we'll use the
         # view to render the layout so you can override layout
@@ -88,11 +107,6 @@ class Mustache
         # Copy instance variables set in Sinatra to the view
         instance_variables.each do |name|
           instance.instance_variable_set(name, instance_variable_get(name))
-
-          # Automagic attr_readers for ivars you set in Sinatra routes.
-          if !instance.respond_to?(name)
-            (class << instance; self end).send(:attr_reader, name.to_s.sub('@',''))
-          end
         end
 
         # Render with locals.
